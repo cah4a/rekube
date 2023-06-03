@@ -1,0 +1,17 @@
+{
+  "name": "rekube",
+  "bin": "bin.cjs",
+  "main": "index.tsx",
+  "dependencies": {
+    "esbuild-register": "^3.4.2",
+    "lodash-es": "^4.17.21",
+    "react": "^18.2.0",
+    "react-nil": "^1.2.0",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "^20.2.3",
+    "@types/react": "^18.2.6"
+  }
+}
