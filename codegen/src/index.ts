@@ -4,45 +4,20 @@ import * as fs from "fs/promises";
 import { format } from "prettier";
 import * as process from "process";
 
-const dir = process.argv[2];
+const dir = process.argv[2] || "../packages/base";
 
 if (!dir) {
-    throw new Error(`Provide output directory`)
+    throw new Error(`Provide output directory`);
 }
 
-codegen().then(async (files) => {
+(async () => {
+    const files = await codegen();
 
-    files.append(
-        "package.json",
-        JSON.stringify(
-            {
-                name: "@rekube/base",
-                bin: "bin.cjs",
-                dependencies: {
-                    "rekube": "workspace:",
-                }
-            },
-            null,
-            2,
-        ),
-    );
-
-    files.append(
-        "tsconfig.json",
-        JSON.stringify(
-            {
-                compilerOptions: {
-                    rootDir: ".",
-                    baseUrl: ".",
-                    jsx: "react",
-                    noEmit: true,
-                    allowUmdGlobalAccess: true,
-                },
-            },
-            null,
-            2,
-        ),
-    );
+    for (const item of await fs.readdir(dir, { withFileTypes: true })) {
+        if (item.isDirectory() && item.name !== "node_modules") {
+            await fs.rm(resolve(dir, item.name), { recursive: true, force: true });
+        }
+    }
 
     for (const [fileName, content] of files) {
         const path = resolve(dir, fileName);
@@ -52,4 +27,4 @@ codegen().then(async (files) => {
             : content;
         await fs.writeFile(path, data);
     }
-});
+})()

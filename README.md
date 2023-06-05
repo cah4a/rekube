@@ -2,14 +2,9 @@
 
 React renderer for Kubernetes :)
 
-## Generating @rekube/base package:
+## Run example
 
 1. git clone
 2. pnpm i
-3. cd codegen && pnpm gen
-4. cd ../packages/base && pnpm i
-
-## Run example
-
-1. cd example
-2. pnpm rekube <filename>
+3. cd example
+4. pnpm rekube

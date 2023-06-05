@@ -3,19 +3,19 @@
 // import {format} from 'prettier';
 
 export class FilesSink {
-  private files = new Map<string, string>();
+    private files = new Map<string, string>();
 
-  prepend(fileName: string, content: string) {
-    const file = this.files.get(fileName);
-    this.files.set(fileName, file ? `${content}\n\n${file}` : content);
-  }
+    prepend(fileName: string, content: string) {
+        const file = this.files.get(fileName);
+        this.files.set(fileName, file ? `${content}\n\n${file}` : content);
+    }
 
-  append(fileName: string, content: string) {
-    const file = this.files.get(fileName);
-    this.files.set(fileName, file ? `${file}\n\n${content}` : content);
-  }
+    append(fileName: string, content: string) {
+        const file = this.files.get(fileName);
+        this.files.set(fileName, file ? `${file}\n\n${content}` : content);
+    }
 
-  [Symbol.iterator]() {
-    return this.files.entries();
-  }
+    [Symbol.iterator]() {
+        return this.files.entries();
+    }
 }

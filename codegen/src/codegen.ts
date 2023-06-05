@@ -2,6 +2,7 @@ import {
     keys,
     filter,
     set,
+    find,
     update,
     entries,
     mapValues,
@@ -12,8 +13,9 @@ import {
     isEmpty,
     uniq,
     first,
+    remove,
 } from "lodash";
-import fs from 'fs/promises';
+import fs from "fs/promises";
 import { FilesSink } from "filesSink";
 import { renderComponent, renderInterface } from "renderers";
 
@@ -32,7 +34,9 @@ async function fetchDefinitions(version: string): Promise<{
 
     return {
         definitions: res.definitions,
-        kinds: filter(map(values(res.paths), "post.x-kubernetes-group-version-kind")),
+        kinds: filter(
+            map(values(res.paths), "post.x-kubernetes-group-version-kind")
+        ),
     };
 }
 
@@ -47,14 +51,21 @@ function getModuleForId(id: string) {
 function createProps(
     { required, properties }: any,
     prefix = "",
-    stack = new Set<string>(),
+    stack = new Set<string>()
 ) {
     const context: any[] = [];
     const props: any[] = [];
 
     entries(properties).forEach(
-        ([name, { $ref, items, type, definition }]: any) => {
-            if (name === "kind" || name === "apiVersion" || name == "status") {
+        ([name, { $ref, items, type, definition, description }]: any) => {
+            const isReadOnly = /read-?only/i.test(description || "");
+
+            if (
+                ["kind", "apiVersion", "managedFields", "status"].includes(
+                    name
+                ) ||
+                isReadOnly
+            ) {
                 return;
             }
 
@@ -67,12 +78,17 @@ function createProps(
                 definition = items.definition;
             }
 
-            const isContext = isArray && items.$ref;
+            const isContext =
+                isArray && items.$ref && name != "ownerReferences";
             if (isContext) {
+                const id = items.$ref.replace(/.*\//, "");
+
                 context.push({
                     path: prefix + name,
                     isRequired,
-                    id: items.$ref.replace(/.*\//, ""),
+                    id,
+                    type: id.split(".").pop(),
+                    module: getModuleForId(id),
                 });
             }
 
@@ -103,7 +119,11 @@ function createProps(
                 }
 
                 stack.add(type);
-                const nested = createProps(definition, `${prefix}${name}\.`, stack);
+                const nested = createProps(
+                    definition,
+                    `${prefix}${name}\.`,
+                    stack
+                );
                 stack.delete(type);
 
                 if (!isContext) {
@@ -117,6 +137,7 @@ function createProps(
                     isRequired,
                     id: $ref.replace(/.*\//, ""),
                     props: nested.props,
+                    description,
                 });
             } else {
                 props.push({
@@ -124,9 +145,10 @@ function createProps(
                     type: type === "integer" ? "number" : type || "object",
                     isArray,
                     isRequired,
+                    description,
                 });
             }
-        },
+        }
     );
 
     return {
@@ -153,17 +175,17 @@ const VERSIONS = [
 ];
 
 async function fetchAllDefinitions() {
-    const cacheFile = "./node_modules/.cache.json"
+    const cacheFile = "./node_modules/.cache.json";
     const definitions: Record<string, any> = {};
     const kinds = new Map<string, GVK>();
 
     try {
-        const cache = JSON.parse(await fs.readFile(cacheFile, 'utf8'));
+        const cache = JSON.parse(await fs.readFile(cacheFile, "utf8"));
         Object.assign(definitions, cache.definitions);
         cache.kinds.forEach((gvk) => {
             kinds.set(`${gvk.group}.${gvk.version}.${gvk.kind}`, gvk);
         });
-        return {definitions, kinds};
+        return { definitions, kinds };
     } catch (e) {
         // file doesn't exists?
     }
@@ -177,16 +199,19 @@ async function fetchAllDefinitions() {
         });
     }
 
-    await fs.writeFile(cacheFile, JSON.stringify({
-        definitions,
-        kinds: Array.from(kinds.values()),
-    }))
+    await fs.writeFile(
+        cacheFile,
+        JSON.stringify({
+            definitions,
+            kinds: Array.from(kinds.values()),
+        })
+    );
 
     return { definitions, kinds };
 }
 
 export async function codegen() {
-    const {definitions, kinds} = await fetchAllDefinitions();
+    const { definitions, kinds } = await fetchAllDefinitions();
 
     // make cross-refs for a convenience
     for (const [key, def] of entries(definitions)) {
@@ -196,7 +221,7 @@ export async function codegen() {
                 set(
                     definitions,
                     [key, "properties", name, "definition"],
-                    definitions[id],
+                    definitions[id]
                 );
             }
 
@@ -205,7 +230,7 @@ export async function codegen() {
                 set(
                     definitions,
                     [key, "properties", name, "items", "definition"],
-                    definitions[id],
+                    definitions[id]
                 );
             }
         }
@@ -232,10 +257,15 @@ export async function codegen() {
 
             const propModule = getModuleForId(id);
             const path = [propModule, "interfaces", type];
+            const description = definitions[id].description;
 
             imports(module, propModule, type);
             if (!has(modules, path)) {
-                set(modules, path, renderInterface(type, props));
+                set(
+                    modules,
+                    path,
+                    renderInterface({ description, name: type, props })
+                );
                 genProps(propModule, props);
             }
         }
@@ -250,7 +280,30 @@ export async function codegen() {
             const { group, version, kind } =
                 def["x-kubernetes-group-version-kind"][0];
             return [`${group}.${version}.${kind}`, id];
-        }),
+        })
+    );
+
+    // set(
+    //     modules,
+    //     [module, "components", kind],
+    //     renderComponent({
+    //         name: kind,
+    //         tag: "Resource",
+    //         props: {
+    //             kind,
+    //             apiVersion: group ? `${group}/${version}` : version,
+    //             id,
+    //         },
+    //         description: definition.description,
+    //         context,
+    //         propTypes: props,
+    //     })
+    // );
+
+    console.log(
+        filter(keys(definitions), (id) =>
+            id.startsWith("io.k8s.apimachinery.pkg")
+        )
     );
 
     const processed = new Set<string>();
@@ -259,7 +312,9 @@ export async function codegen() {
         const definition = definitions[id || ""];
 
         if (!id || !definition) {
-            console.warn(`Can't find definition for ${group}.${version}.${kind}`);
+            console.warn(
+                `Can't find definition for ${group}.${version}.${kind}`
+            );
             continue;
         }
         if (!definition.required) {
@@ -272,6 +327,27 @@ export async function codegen() {
 
         const { props, context } = createProps(definitions[id]);
 
+        const meta = find(props, {
+            id: "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta",
+        });
+        const spec = find(props, { name: "spec" });
+        const onlySpec = spec && props.length == (meta ? 2 : 1);
+
+        if (meta) {
+            remove(props, meta);
+            for (const { name, ...propSpec } of meta.props) {
+                props.push({
+                    name: `meta:${name}`,
+                    ...propSpec,
+                });
+            }
+        }
+
+        if (onlySpec) {
+            remove(props, spec);
+            props.push(...spec.props);
+        }
+
         for (const { id: ctxId, path } of context) {
             set(nested, [ctxId, id, path], true);
             nestedStack.push(ctxId);
@@ -280,6 +356,7 @@ export async function codegen() {
         genProps(module, props);
 
         imports(module, "rekube", "Resource");
+        imports(module, "rekube", "useResourceProps");
         set(
             modules,
             [module, "components", kind],
@@ -294,7 +371,10 @@ export async function codegen() {
                 description: definition.description,
                 context,
                 propTypes: props,
-            }),
+                propsMapper: onlySpec
+                    ? `useResourceProps(props, ${spec ? "true" : "false"})`
+                    : undefined,
+            })
         );
     }
 
@@ -322,6 +402,7 @@ export async function codegen() {
         }
 
         imports(module, "rekube", "Item");
+
         set(
             modules,
             [module, "components", name],
@@ -336,14 +417,27 @@ export async function codegen() {
                 },
                 propTypes: props,
                 context,
-            }),
+            })
         );
     }
+
+    // const multimount = {};
+    //
+    // for (const id of keys(nested)) {
+    //     const multipleMount = pickBy(nested[id], items => keys(items).length > 1);
+    //
+    //     for (const [toId, paths] of entries(multipleMount)) {
+    //         console.warn(`'${toId}' could have several '${id}' within paths:`, keys(paths));
+    //         //set(multimount, [toId, id], keys(paths));
+    //     }
+    // }
+    //
+    // console.log(multimount)
 
     const sink = new FilesSink();
 
     for (const [module, { imports, interfaces, components }] of entries(
-        modules,
+        modules
     )) {
         const file = `${module}.tsx`;
 
@@ -353,9 +447,9 @@ export async function codegen() {
                 entries(imports)
                     .map(
                         ([dependant, types]) =>
-                            `import {${uniq(types)}} from '${dependant}';`,
+                            `import {${uniq(types)}} from '${dependant}';`
                     )
-                    .join("\n"),
+                    .join("\n")
             );
         }
 

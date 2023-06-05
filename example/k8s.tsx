@@ -7,14 +7,16 @@ export default function App() {
     return (
         <>
             <Deployment
-                spec={{ template: { metadata: { labels } }, selector: { matchLabels: labels } }}
+                meta:name="nginx"
+                template={{ metadata: { labels } }}
+                selector={{ matchLabels: labels }}
             >
                 <Container name="nginx">
                     <ContainerPort containerPort={3000} />
                 </Container>
             </Deployment>
 
-            <Service spec={{ selector: labels }}>
+            <Service selector={{ labels }}>
                 <ServicePort port={3000} />
             </Service>
         </>

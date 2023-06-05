@@ -3,4 +3,3 @@
 .vscode
 node_modules
 dist
-packages/base
