@@ -30,6 +30,35 @@ declare global {
     }
 }
 
+type Suffix = "Ki" | "Mi" | "Gi" | "Ti" | "Pi" | "Ei" | "m" | "" | "k" | "M" | "G" | "T" | "P" | "E";
+export type Quantity = number | `${number}${Suffix}` | `e${number}` | `E${number}`
+
+export type IntOrString = number | string;
+
+export type ParamKind = {
+    apiVersion: string;
+    kind: string;
+};
+
+export type Time = string | Date;
+export type MicroTime = string | Date;
+
+export type JSONValue =
+    | string
+    | number
+    | boolean
+    | JSONObject
+    | JSONArray;
+
+export type RawExtension = object;
+
+interface JSONObject {
+    [x: string]: JSONValue;
+}
+
+interface JSONArray extends Array<JSONValue> {
+}
+
 const RootContext = createContext("");
 const ItemContext = createContext("");
 const ResourceContext = createContext<
@@ -50,7 +79,14 @@ export function useResource() {
     return resouce;
 }
 
-export function useResourceProps(props: Record<string, any>, specsome = false) {
+/**
+ * React hook to process `meta:*` keys from props, wrap props into some key, process flags.
+ *
+ * @param props
+ * @param key
+ * @param flags
+ */
+export function useKubeProps(props: Record<string, any>, { key, flags, defaultFlag }: { key?: string, flags?: string[], defaultFlag?: string }) {
     const metadata = Object.assign(
         {},
         Object.fromEntries(
@@ -67,16 +103,23 @@ export function useResourceProps(props: Record<string, any>, specsome = false) {
 
     delete props["metadata"];
 
-    if (specsome) {
-        return {
-            metadata: Object.keys(metadata).length ? metadata : undefined,
-            spec: props
-        };
-    } else {
-        return {
-            metadata: Object.keys(metadata).length ? metadata : undefined,
-            ...props
-        };
+    const flag = (flags || []).find(flag => props[flag]) || defaultFlag;
+
+    if (flags?.length) {
+        for (const flag of flags) {
+            delete props[flag];
+        }
+    }
+
+    let childProps = key ? { [key]: props } : { ...props };
+
+    if (Object.keys(metadata).length) {
+        childProps = { metadata, ...childProps };
+    }
+
+    return {
+        childProps,
+        flag,
     }
 }
 
@@ -106,32 +149,37 @@ export function Resource({
 
 export function Item({
                          id,
-                         paths,
+                         contexts,
+                         flag,
                          value,
                          children
                      }: {
     id: string;
-    paths: Record<string, string>;
+    contexts: { id: string, path: string, isItem?: boolean, flag?: string }[],
+    flag?: string;
     value?: any;
     children?: React.ReactNode;
 }) {
-    const parentItem = useContext(ItemContext);
+    const parentId = useContext(ItemContext);
 
-    if (!parentItem) {
+    if (!parentId) {
         throw new Error(`Can't find parent element context`);
     }
 
-    const path = paths[parentItem];
+    const { path, isItem } = contexts.find(
+        ctx => ctx.id === parentId && ctx.flag === flag,
+    ) || {};
 
     if (!path) {
-        throw new Error(`Unexpected parent ${parentItem} for element ${id}`);
+        const hasFlags = contexts.some(ctx => ctx.flag);
+        throw new Error(`Unexpected parent ${parentId} for element ${id}` + (flag ? ` with flag ${flag}` : (hasFlags ? ` with no flag passed` : "")));
     }
+
+    const props = { path, value, children };
 
     return (
         <ItemContext.Provider value={id}>
-            <item path={path} value={value}>
-                {children}
-            </item>
+            {isItem ? <item {...props} /> : <prop {...props} />}
         </ItemContext.Provider>
     );
 }

@@ -1,52 +1,22 @@
-import { IOwnerReference, ILabelSelector, IDeleteOptions } from "meta/v1";
-import { Resource, useResourceProps } from "rekube";
+import { IObjectMeta, ILabelSelector, IPreconditions } from "meta/v1";
+import { IntOrString, useKubeProps, Resource } from "rekube";
 
-/**
- * PodDisruptionBudget is an object to define the max disruption that can be caused to a collection of pods
+/** * PodDisruptionBudget is an object to define the max disruption that can be caused to a collection of pods
  *
  * Child components:
- * - spec.selector.matchExpressions: {@link LabelSelectorRequirement}
- */
-export function PodDisruptionBudget({
+ * - spec.selector: {@link LabelSelector} (single element) */
+export const PodDisruptionBudget = ({
   children,
   ...props
 }: {
   /**
-   * Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
+   * An eviction is allowed if at most "maxUnavailable" pods selected by "selector" are unavailable after the eviction, i.e. even in absence of the evicted pod. For example, one can prevent all voluntary evictions by specifying 0. This is a mutually exclusive setting with "minAvailable".
    */
-  "meta:annotations"?: object;
+  maxUnavailable?: IntOrString;
   /**
-   * Must be empty before the object is deleted from the registry. Each entry is an identifier for the responsible component that will remove the entry from the list. If the deletionTimestamp of the object is non-nil, entries in this list can only be removed. Finalizers may be processed and removed in any order.  Order is NOT enforced because it introduces significant risk of stuck finalizers. finalizers is a shared field, any actor with permission can reorder it. If the finalizer list is processed in order, then this can lead to a situation in which the component responsible for the first finalizer in the list is waiting for a signal (field value, external system, or other) produced by a component responsible for a finalizer later in the list, resulting in a deadlock. Without enforced ordering finalizers are free to order amongst themselves and are not vulnerable to ordering changes in the list.
+   * An eviction is allowed if at least "minAvailable" pods selected by "selector" will still be available after the eviction, i.e. even in the absence of the evicted pod.  So for example you can prevent all voluntary evictions by specifying "100%".
    */
-  "meta:finalizers"?: string[];
-  /**
-   * GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.
-   *
-   * If this field is specified and the generated name exists, the server will return a 409.
-   *
-   * Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-   */
-  "meta:generateName"?: string;
-  /**
-   * Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-   */
-  "meta:labels"?: object;
-  /**
-   * Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-   */
-  "meta:name"?: string;
-  /**
-   * Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the "default" namespace, but "default" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty.
-   *
-   * Must be a DNS_LABEL. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-   */
-  "meta:namespace"?: string;
-  /**
-   * List of objects depended by this object. If ALL objects in the list have been deleted, this object will be garbage collected. If this object is managed by a controller, then an entry in this list will point to this controller, with the controller field set to true. There cannot be more than one managing controller.
-   */
-  "meta:ownerReferences"?: IOwnerReference[];
-  maxUnavailable?: number | string;
-  minAvailable?: number | string;
+  minAvailable?: IntOrString;
   /**
    * Label query over pods whose evictions are managed by the disruption budget. A null selector will match no pods, while an empty ({}) selector will select all pods within the namespace.
    */
@@ -66,69 +36,56 @@ export function PodDisruptionBudget({
    */
   unhealthyPodEvictionPolicy?: string;
   children?: React.ReactNode;
-}) {
-  const childProps = useResourceProps(props, true);
+} & IObjectMeta) => {
+  const { childProps } = useKubeProps(props, {
+    key: "spec",
+  });
   return (
     <Resource
+      id="io.k8s.api.policy.v1.PodDisruptionBudget"
       kind="PodDisruptionBudget"
       apiVersion="policy/v1"
-      id="io.k8s.api.policy.v1.PodDisruptionBudget"
       props={childProps}
     >
       {children}
     </Resource>
   );
-}
+};
 
-/**
- * Eviction evicts a pod from its node subject to certain policies and safety constraints. This is a subresource of Pod.  A request to cause such an eviction is created by POSTing to .../pods/<pod name>/evictions.
- */
-export function Eviction(props: {
-  /**
-   * DeleteOptions may be provided
-   */
-  deleteOptions?: IDeleteOptions;
-  /**
-   * Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-   */
-  "meta:annotations"?: object;
-  /**
-   * Must be empty before the object is deleted from the registry. Each entry is an identifier for the responsible component that will remove the entry from the list. If the deletionTimestamp of the object is non-nil, entries in this list can only be removed. Finalizers may be processed and removed in any order.  Order is NOT enforced because it introduces significant risk of stuck finalizers. finalizers is a shared field, any actor with permission can reorder it. If the finalizer list is processed in order, then this can lead to a situation in which the component responsible for the first finalizer in the list is waiting for a signal (field value, external system, or other) produced by a component responsible for a finalizer later in the list, resulting in a deadlock. Without enforced ordering finalizers are free to order amongst themselves and are not vulnerable to ordering changes in the list.
-   */
-  "meta:finalizers"?: string[];
-  /**
-   * GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.
-   *
-   * If this field is specified and the generated name exists, the server will return a 409.
-   *
-   * Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-   */
-  "meta:generateName"?: string;
-  /**
-   * Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-   */
-  "meta:labels"?: object;
-  /**
-   * Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-   */
-  "meta:name"?: string;
-  /**
-   * Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the "default" namespace, but "default" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty.
-   *
-   * Must be a DNS_LABEL. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-   */
-  "meta:namespace"?: string;
-  /**
-   * List of objects depended by this object. If ALL objects in the list have been deleted, this object will be garbage collected. If this object is managed by a controller, then an entry in this list will point to this controller, with the controller field set to true. There cannot be more than one managing controller.
-   */
-  "meta:ownerReferences"?: IOwnerReference[];
-}) {
+/** * Eviction evicts a pod from its node subject to certain policies and safety constraints. This is a subresource of Pod.  A request to cause such an eviction is created by POSTing to .../pods/<pod name>/evictions. */
+export const Eviction = (
+  props: {
+    /**
+     * When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed
+     */
+    dryRun?: string[];
+    /**
+     * The duration in seconds before the object should be deleted. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period for the specified type will be used. Defaults to a per object value if not specified. zero means delete immediately.
+     */
+    gracePeriodSeconds?: number | bigint;
+    /**
+     * Deprecated: please use the PropagationPolicy, this field will be deprecated in 1.7. Should the dependent objects be orphaned. If true/false, the "orphan" finalizer will be added to/removed from the object's finalizers list. Either this field or PropagationPolicy may be set, but not both.
+     */
+    orphanDependents?: boolean;
+    /**
+     * Must be fulfilled before a deletion is carried out. If not possible, a 409 Conflict status will be returned.
+     */
+    preconditions?: IPreconditions;
+    /**
+     * Whether and how garbage collection will be performed. Either this field or OrphanDependents may be set, but not both. The default policy is decided by the existing finalizer set in the metadata.finalizers and the resource-specific default policy. Acceptable values are: 'Orphan' - orphan the dependents; 'Background' - allow the garbage collector to delete the dependents in the background; 'Foreground' - a cascading policy that deletes all dependents in the foreground.
+     */
+    propagationPolicy?: string;
+  } & IObjectMeta
+) => {
+  const { childProps } = useKubeProps(props, {
+    key: "deleteOptions",
+  });
   return (
     <Resource
+      id="io.k8s.api.policy.v1.Eviction"
       kind="Eviction"
       apiVersion="policy/v1"
-      id="io.k8s.api.policy.v1.Eviction"
-      props={props}
+      props={childProps}
     />
   );
-}
+};

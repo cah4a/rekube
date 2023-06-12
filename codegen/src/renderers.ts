@@ -1,24 +1,34 @@
-import { map } from "lodash";
+import { filter, map } from "lodash";
 
-function renderTypes(props: any[]) {
-    return props.map(({ name, isRequired, type, isArray, description }) =>
-        [
-            description
-                ? [
-                      "/**",
-                      ...description
-                          .replaceAll("*/", "*\u200B/")
-                          .split("\n")
-                          .map((line) => `* ${line.trim()}`),
-                      "*/\n",
-                  ].join("\n")
-                : "",
-            `"${name}"`,
-            isRequired ? ":" : "?:",
-            type,
-            isArray ? "[];" : ";",
-        ].join("")
-    );
+export type RenderableProp = {
+    name: string;
+    isRequired?: boolean;
+    type: string;
+    isArray?: boolean;
+    description?: string;
+};
+
+function renderTypes(props: RenderableProp[], hasChildren?: boolean) {
+    return props
+        .map(({ name, isRequired, type, isArray, description }) =>
+            [
+                description
+                    ? [
+                          "/**",
+                          ...description
+                              .replace(/\*\//g, "*\u200B/")
+                              .split("\n")
+                              .map((line) => `* ${line.trim()}`),
+                          "*/\n",
+                      ].join("\n")
+                    : "",
+                `"${name}"`,
+                isRequired ? ":" : "?:",
+                type,
+                isArray ? "[];" : ";",
+            ].join("")
+        )
+        .concat(hasChildren ? ["children?: React.ReactNode;"] : []);
 }
 
 export function renderInterface({
@@ -27,7 +37,7 @@ export function renderInterface({
     description,
 }: {
     name: string;
-    props: any[];
+    props: RenderableProp[];
     description?: string;
 }) {
     description = description
@@ -45,8 +55,15 @@ export function renderInterface({
         }
     `;
 }
+export class VarRef {
+    constructor(public name: string) {}
+}
 
 function reactProp(value: any, key: string) {
+    if (value instanceof VarRef) {
+        return `${key}={${value.name}}`;
+    }
+
     if (typeof value === "string") {
         return `${key}=${JSON.stringify(value)}`;
     }
@@ -59,6 +76,7 @@ function reactProp(value: any, key: string) {
 }
 
 export function renderComponent({
+    subcomponentOf,
     name,
     tag,
     description,
@@ -66,55 +84,94 @@ export function renderComponent({
     propTypes,
     props,
     propsName = "props",
-    propsMapper,
+    andPropTypeRefs = [],
+    flags = [],
+    defaultFlag,
+    specKey,
 }: {
+    subcomponentOf?: string;
     name: string;
     tag: string;
     description?: string;
     context: any[];
-    propTypes: any[];
+    propTypes: RenderableProp[];
     props?: Record<string, any>;
     propsName?: string;
-    propsMapper?: string;
+    andPropTypeRefs?: string[];
+    flags?: (string | undefined)[];
+    defaultFlag?: string;
+    specKey?: string;
 }) {
-    const signature = renderTypes(propTypes);
+    props = {
+        ...props,
+        [propsName]: new VarRef("childProps"),
+    };
+    if (flags?.length) {
+        props["flag"] = new VarRef("flag");
+    }
+    const propLine = map(props, reactProp).join(" ");
 
-    const propLine = [
-        ...map(props, reactProp),
-        `${propsName}={${propsMapper ? "childProps" : "props"}}`,
-    ].join(" ");
+    const initPropsLine = `const { childProps ${
+        flags?.length ? ", flag" : ""
+    } } = useKubeProps(props, {
+        ${specKey ? `key: "${specKey}",` : ""}
+        ${flags?.length ? `flags: ${JSON.stringify(filter(flags))},` : ""}
+        ${defaultFlag ? `defaultFlag: "${defaultFlag}",` : ""}
+    })`;
 
     const descriptionLines = [
         ...(description || "").split("\n").map((line) => `* ${line.trim()}`),
     ];
 
-    if (context.length) {
-        signature.push("children?: React.ReactNode;");
-        const propsType = `{ ${signature.join("\n")} }`;
+    const declaration = subcomponentOf
+        ? `${subcomponentOf}.${name}`
+        : `export const ${name}`;
 
+    const flagIsOptional = defaultFlag || flags.includes(undefined);
+
+    const flagType = flags?.length
+        ? `( ${flags
+              .filter((flag) => flag !== defaultFlag)
+              .map((flag) =>
+                  flag
+                      ? `{ ${flag}${flagIsOptional ? "?" : ""}: boolean }`
+                      : `{}`
+              )
+              .join(" | ")} )`
+        : undefined;
+
+    const propType = [
+        `{ ${renderTypes(propTypes, context.length > 0).join("\n")} }`,
+        ...andPropTypeRefs,
+        ...filter([flagType]),
+    ].join(" & ");
+
+    if (context.length) {
         descriptionLines.push(
             "*",
             "* Child components:",
-            ...context.map(({ path, type }) => `* - ${path}: {@link ${type}}`)
+            ...context.map(({ path, name, flag, isItem }) =>
+                [
+                    `* - ${path}: {@link ${name}}`,
+                    flag ? ` with '${flag}' flag` : "",
+                    isItem ? "" : " (single element)",
+                ].join("")
+            )
         );
 
         return `
-                /**
-                ${descriptionLines.join("\n")}
-                */
-              export function ${name}({children, ...props}: ${propsType}) {
-                  ${propsMapper ? `const childProps = ${propsMapper};` : ''}
+              /** ${descriptionLines.join("\n")} */
+              ${declaration} = ({ children, ...props }: ${propType}) => {
+                  ${initPropsLine}
                   return <${tag} ${propLine}>{children}</${tag}>
               }
           `;
     }
 
     return `
-        /**
-        ${descriptionLines.join("\n")}
-        */
-        export function ${name}(props: { ${signature.join("\n")} }) {
-            ${propsMapper ? `const childProps = ${propsMapper};` : ''}
+        /** ${descriptionLines.join("\n")} */
+        ${declaration} = (props: ${propType}) => {
+            ${initPropsLine}
             return <${tag} ${propLine}/>
         }
     `;

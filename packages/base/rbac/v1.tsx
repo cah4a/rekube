@@ -1,5 +1,5 @@
-import { IOwnerReference, ILabelSelector } from "meta/v1";
-import { Resource, useResourceProps, Item } from "rekube";
+import { ILabelSelectorRequirement, IObjectMeta } from "meta/v1";
+import { useKubeProps, Resource, Item } from "rekube";
 
 /**
  * RoleRef contains information that points to the role being used
@@ -38,9 +38,13 @@ export interface ISubject {
  */
 export interface IAggregationRule {
   /**
-   * ClusterRoleSelectors holds a list of selectors which will be used to find ClusterRoles and create the rules. If any of the selectors match, then the ClusterRole's permissions will be added
+   * matchExpressions is a list of label selector requirements. The requirements are ANDed.
    */
-  clusterRoleSelectors?: ILabelSelector[];
+  matchExpressions?: ILabelSelectorRequirement[];
+  /**
+   * matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+   */
+  matchLabels?: Record<string, string>;
 }
 
 /**
@@ -69,80 +73,12 @@ export interface IPolicyRule {
   verbs: string[];
 }
 
-/**
- * ClusterRoleBinding references a ClusterRole, but not contain it.  It can reference a ClusterRole in the global namespace, and adds who information via Subject.
+/** * ClusterRole is a cluster level, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding or ClusterRoleBinding.
  *
  * Child components:
- * - subjects: {@link Subject}
- */
-export function ClusterRoleBinding({
-  children,
-  ...props
-}: {
-  /**
-   * RoleRef can only reference a ClusterRole in the global namespace. If the RoleRef cannot be resolved, the Authorizer must return an error.
-   */
-  roleRef: IRoleRef;
-  /**
-   * Subjects holds references to the objects the role applies to.
-   */
-  subjects?: ISubject[];
-  /**
-   * Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-   */
-  "meta:annotations"?: object;
-  /**
-   * Must be empty before the object is deleted from the registry. Each entry is an identifier for the responsible component that will remove the entry from the list. If the deletionTimestamp of the object is non-nil, entries in this list can only be removed. Finalizers may be processed and removed in any order.  Order is NOT enforced because it introduces significant risk of stuck finalizers. finalizers is a shared field, any actor with permission can reorder it. If the finalizer list is processed in order, then this can lead to a situation in which the component responsible for the first finalizer in the list is waiting for a signal (field value, external system, or other) produced by a component responsible for a finalizer later in the list, resulting in a deadlock. Without enforced ordering finalizers are free to order amongst themselves and are not vulnerable to ordering changes in the list.
-   */
-  "meta:finalizers"?: string[];
-  /**
-   * GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.
-   *
-   * If this field is specified and the generated name exists, the server will return a 409.
-   *
-   * Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-   */
-  "meta:generateName"?: string;
-  /**
-   * Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-   */
-  "meta:labels"?: object;
-  /**
-   * Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-   */
-  "meta:name"?: string;
-  /**
-   * Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the "default" namespace, but "default" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty.
-   *
-   * Must be a DNS_LABEL. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-   */
-  "meta:namespace"?: string;
-  /**
-   * List of objects depended by this object. If ALL objects in the list have been deleted, this object will be garbage collected. If this object is managed by a controller, then an entry in this list will point to this controller, with the controller field set to true. There cannot be more than one managing controller.
-   */
-  "meta:ownerReferences"?: IOwnerReference[];
-  children?: React.ReactNode;
-}) {
-  return (
-    <Resource
-      kind="ClusterRoleBinding"
-      apiVersion="rbac.authorization.k8s.io/v1"
-      id="io.k8s.api.rbac.v1.ClusterRoleBinding"
-      props={props}
-    >
-      {children}
-    </Resource>
-  );
-}
-
-/**
- * ClusterRole is a cluster level, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding or ClusterRoleBinding.
- *
- * Child components:
- * - aggregationRule.clusterRoleSelectors: {@link LabelSelector}
- * - rules: {@link PolicyRule}
- */
-export function ClusterRole({
+ * - aggregationRule: {@link AggregationRule} (single element)
+ * - rules: {@link PolicyRule} */
+export const ClusterRole = ({
   children,
   ...props
 }: {
@@ -154,61 +90,95 @@ export function ClusterRole({
    * Rules holds all the PolicyRules for this ClusterRole
    */
   rules?: IPolicyRule[];
-  /**
-   * Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-   */
-  "meta:annotations"?: object;
-  /**
-   * Must be empty before the object is deleted from the registry. Each entry is an identifier for the responsible component that will remove the entry from the list. If the deletionTimestamp of the object is non-nil, entries in this list can only be removed. Finalizers may be processed and removed in any order.  Order is NOT enforced because it introduces significant risk of stuck finalizers. finalizers is a shared field, any actor with permission can reorder it. If the finalizer list is processed in order, then this can lead to a situation in which the component responsible for the first finalizer in the list is waiting for a signal (field value, external system, or other) produced by a component responsible for a finalizer later in the list, resulting in a deadlock. Without enforced ordering finalizers are free to order amongst themselves and are not vulnerable to ordering changes in the list.
-   */
-  "meta:finalizers"?: string[];
-  /**
-   * GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.
-   *
-   * If this field is specified and the generated name exists, the server will return a 409.
-   *
-   * Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-   */
-  "meta:generateName"?: string;
-  /**
-   * Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-   */
-  "meta:labels"?: object;
-  /**
-   * Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-   */
-  "meta:name"?: string;
-  /**
-   * Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the "default" namespace, but "default" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty.
-   *
-   * Must be a DNS_LABEL. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-   */
-  "meta:namespace"?: string;
-  /**
-   * List of objects depended by this object. If ALL objects in the list have been deleted, this object will be garbage collected. If this object is managed by a controller, then an entry in this list will point to this controller, with the controller field set to true. There cannot be more than one managing controller.
-   */
-  "meta:ownerReferences"?: IOwnerReference[];
   children?: React.ReactNode;
-}) {
+} & IObjectMeta) => {
+  const { childProps } = useKubeProps(props, {});
   return (
     <Resource
+      id="io.k8s.api.rbac.v1.ClusterRole"
       kind="ClusterRole"
       apiVersion="rbac.authorization.k8s.io/v1"
-      id="io.k8s.api.rbac.v1.ClusterRole"
-      props={props}
+      props={childProps}
     >
       {children}
     </Resource>
   );
-}
+};
 
-/**
- * RoleBinding references a role, but does not contain it.  It can reference a Role in the same namespace or a ClusterRole in the global namespace. It adds who information via Subjects and namespace information by which namespace it exists in.  RoleBindings in a given namespace only have effect in that namespace.
+/** * ClusterRoleBinding references a ClusterRole, but not contain it.  It can reference a ClusterRole in the global namespace, and adds who information via Subject.
  *
  * Child components:
- * - subjects: {@link Subject}
- */
-export function RoleBinding({
+ * - subjects: {@link Subject} */
+export const ClusterRoleBinding = ({
+  children,
+  ...props
+}: {
+  /**
+   * RoleRef can only reference a ClusterRole in the global namespace. If the RoleRef cannot be resolved, the Authorizer must return an error.
+   */
+  roleRef: IRoleRef;
+  /**
+   * Subjects holds references to the objects the role applies to.
+   */
+  subjects?: ISubject[];
+  children?: React.ReactNode;
+} & IObjectMeta) => {
+  const { childProps } = useKubeProps(props, {});
+  return (
+    <Resource
+      id="io.k8s.api.rbac.v1.ClusterRoleBinding"
+      kind="ClusterRoleBinding"
+      apiVersion="rbac.authorization.k8s.io/v1"
+      props={childProps}
+    >
+      {children}
+    </Resource>
+  );
+};
+
+/** * Role is a namespaced, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding. */
+export const Role = (
+  props: {
+    /**
+     * APIGroups is the name of the APIGroup that contains the resources.  If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. "" represents the core API group and "*" represents all API groups.
+     */
+    apiGroups?: string[];
+    /**
+     * NonResourceURLs is a set of partial urls that a user should have access to.  *s are allowed, but only as the full, final step in the path Since non-resource URLs are not namespaced, this field is only applicable for ClusterRoles referenced from a ClusterRoleBinding. Rules can either apply to API resources (such as "pods" or "secrets") or non-resource URL paths (such as "/api"),  but not both.
+     */
+    nonResourceURLs?: string[];
+    /**
+     * ResourceNames is an optional white list of names that the rule applies to.  An empty set means that everything is allowed.
+     */
+    resourceNames?: string[];
+    /**
+     * Resources is a list of resources this rule applies to. '*' represents all resources.
+     */
+    resources?: string[];
+    /**
+     * Verbs is a list of Verbs that apply to ALL the ResourceKinds contained in this rule. '*' represents all verbs.
+     */
+    verbs: string[];
+  } & IObjectMeta
+) => {
+  const { childProps } = useKubeProps(props, {
+    key: "rules",
+  });
+  return (
+    <Resource
+      id="io.k8s.api.rbac.v1.Role"
+      kind="Role"
+      apiVersion="rbac.authorization.k8s.io/v1"
+      props={childProps}
+    />
+  );
+};
+
+/** * RoleBinding references a role, but does not contain it.  It can reference a Role in the same namespace or a ClusterRole in the global namespace. It adds who information via Subjects and namespace information by which namespace it exists in.  RoleBindings in a given namespace only have effect in that namespace.
+ *
+ * Child components:
+ * - subjects: {@link Subject} */
+export const RoleBinding = ({
   children,
   ...props
 }: {
@@ -220,120 +190,23 @@ export function RoleBinding({
    * Subjects holds references to the objects the role applies to.
    */
   subjects?: ISubject[];
-  /**
-   * Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-   */
-  "meta:annotations"?: object;
-  /**
-   * Must be empty before the object is deleted from the registry. Each entry is an identifier for the responsible component that will remove the entry from the list. If the deletionTimestamp of the object is non-nil, entries in this list can only be removed. Finalizers may be processed and removed in any order.  Order is NOT enforced because it introduces significant risk of stuck finalizers. finalizers is a shared field, any actor with permission can reorder it. If the finalizer list is processed in order, then this can lead to a situation in which the component responsible for the first finalizer in the list is waiting for a signal (field value, external system, or other) produced by a component responsible for a finalizer later in the list, resulting in a deadlock. Without enforced ordering finalizers are free to order amongst themselves and are not vulnerable to ordering changes in the list.
-   */
-  "meta:finalizers"?: string[];
-  /**
-   * GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.
-   *
-   * If this field is specified and the generated name exists, the server will return a 409.
-   *
-   * Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-   */
-  "meta:generateName"?: string;
-  /**
-   * Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-   */
-  "meta:labels"?: object;
-  /**
-   * Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-   */
-  "meta:name"?: string;
-  /**
-   * Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the "default" namespace, but "default" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty.
-   *
-   * Must be a DNS_LABEL. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-   */
-  "meta:namespace"?: string;
-  /**
-   * List of objects depended by this object. If ALL objects in the list have been deleted, this object will be garbage collected. If this object is managed by a controller, then an entry in this list will point to this controller, with the controller field set to true. There cannot be more than one managing controller.
-   */
-  "meta:ownerReferences"?: IOwnerReference[];
   children?: React.ReactNode;
-}) {
+} & IObjectMeta) => {
+  const { childProps } = useKubeProps(props, {});
   return (
     <Resource
+      id="io.k8s.api.rbac.v1.RoleBinding"
       kind="RoleBinding"
       apiVersion="rbac.authorization.k8s.io/v1"
-      id="io.k8s.api.rbac.v1.RoleBinding"
-      props={props}
+      props={childProps}
     >
       {children}
     </Resource>
   );
-}
+};
 
-/**
- * Role is a namespaced, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding.
- *
- * Child components:
- * - rules: {@link PolicyRule}
- */
-export function Role({
-  children,
-  ...props
-}: {
-  /**
-   * Rules holds all the PolicyRules for this Role
-   */
-  rules?: IPolicyRule[];
-  /**
-   * Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
-   */
-  "meta:annotations"?: object;
-  /**
-   * Must be empty before the object is deleted from the registry. Each entry is an identifier for the responsible component that will remove the entry from the list. If the deletionTimestamp of the object is non-nil, entries in this list can only be removed. Finalizers may be processed and removed in any order.  Order is NOT enforced because it introduces significant risk of stuck finalizers. finalizers is a shared field, any actor with permission can reorder it. If the finalizer list is processed in order, then this can lead to a situation in which the component responsible for the first finalizer in the list is waiting for a signal (field value, external system, or other) produced by a component responsible for a finalizer later in the list, resulting in a deadlock. Without enforced ordering finalizers are free to order amongst themselves and are not vulnerable to ordering changes in the list.
-   */
-  "meta:finalizers"?: string[];
-  /**
-   * GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.
-   *
-   * If this field is specified and the generated name exists, the server will return a 409.
-   *
-   * Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency
-   */
-  "meta:generateName"?: string;
-  /**
-   * Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
-   */
-  "meta:labels"?: object;
-  /**
-   * Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names
-   */
-  "meta:name"?: string;
-  /**
-   * Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the "default" namespace, but "default" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty.
-   *
-   * Must be a DNS_LABEL. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces
-   */
-  "meta:namespace"?: string;
-  /**
-   * List of objects depended by this object. If ALL objects in the list have been deleted, this object will be garbage collected. If this object is managed by a controller, then an entry in this list will point to this controller, with the controller field set to true. There cannot be more than one managing controller.
-   */
-  "meta:ownerReferences"?: IOwnerReference[];
-  children?: React.ReactNode;
-}) {
-  return (
-    <Resource
-      kind="Role"
-      apiVersion="rbac.authorization.k8s.io/v1"
-      id="io.k8s.api.rbac.v1.Role"
-      props={props}
-    >
-      {children}
-    </Resource>
-  );
-}
-
-/**
- * Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference, or a value for non-objects such as user and group names.
- */
-export function Subject(props: {
+/** * Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference, or a value for non-objects such as user and group names. */
+export const Subject = (props: {
   /**
    * APIGroup holds the API group of the referenced subject. Defaults to "" for ServiceAccount subjects. Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
    */
@@ -346,23 +219,68 @@ export function Subject(props: {
    * Namespace of the referenced object.  If the object kind is non-namespace, such as "User" or "Group", and this value is not empty the Authorizer should report an error.
    */
   namespace?: string;
-}) {
+}) => {
+  const { childProps } = useKubeProps(props, {});
   return (
     <Item
       id="io.k8s.api.rbac.v1.Subject"
-      paths={{
-        "io.k8s.api.rbac.v1.ClusterRoleBinding": "subjects",
-        "io.k8s.api.rbac.v1.RoleBinding": "subjects",
-      }}
-      value={props}
+      contexts={[
+        {
+          id: "io.k8s.api.rbac.v1.ClusterRoleBinding",
+          path: "subjects",
+          isItem: true,
+        },
+        {
+          id: "io.k8s.api.rbac.v1.RoleBinding",
+          path: "subjects",
+          isItem: true,
+        },
+      ]}
+      value={childProps}
     />
   );
-}
+};
 
-/**
- * PolicyRule holds information that describes a policy rule, but does not contain information about who the rule applies to or which namespace the rule applies to.
- */
-export function PolicyRule(props: {
+/** * AggregationRule describes how to locate ClusterRoles to aggregate into the ClusterRole
+ *
+ * Child components:
+ * - clusterRoleSelectors.matchExpressions: {@link LabelSelectorRequirement} */
+export const AggregationRule = ({
+  children,
+  ...props
+}: {
+  /**
+   * matchExpressions is a list of label selector requirements. The requirements are ANDed.
+   */
+  matchExpressions?: ILabelSelectorRequirement[];
+  /**
+   * matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
+   */
+  matchLabels?: Record<string, string>;
+  children?: React.ReactNode;
+}) => {
+  const { childProps } = useKubeProps(props, {
+    key: "clusterRoleSelectors",
+  });
+  return (
+    <Item
+      id="io.k8s.api.rbac.v1.AggregationRule"
+      contexts={[
+        {
+          id: "io.k8s.api.rbac.v1.ClusterRole",
+          path: "aggregationRule",
+          isItem: false,
+        },
+      ]}
+      value={childProps}
+    >
+      {children}
+    </Item>
+  );
+};
+
+/** * PolicyRule holds information that describes a policy rule, but does not contain information about who the rule applies to or which namespace the rule applies to. */
+ClusterRole.PolicyRule = (props: {
   /**
    * APIGroups is the name of the APIGroup that contains the resources.  If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. "" represents the core API group and "*" represents all API groups.
    */
@@ -383,15 +301,15 @@ export function PolicyRule(props: {
    * Verbs is a list of Verbs that apply to ALL the ResourceKinds contained in this rule. '*' represents all verbs.
    */
   verbs: string[];
-}) {
+}) => {
+  const { childProps } = useKubeProps(props, {});
   return (
     <Item
       id="io.k8s.api.rbac.v1.PolicyRule"
-      paths={{
-        "io.k8s.api.rbac.v1.ClusterRole": "rules",
-        "io.k8s.api.rbac.v1.Role": "rules",
-      }}
-      value={props}
+      contexts={[
+        { id: "io.k8s.api.rbac.v1.ClusterRole", path: "rules", isItem: true },
+      ]}
+      value={childProps}
     />
   );
-}
+};
