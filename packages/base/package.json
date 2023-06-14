@@ -1,7 +1,8 @@
 {
   "name": "@rekube/base",
   "bin": "bin.cjs",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "type": "module",
   "dependencies": {
     "rekube": "workspace:"
   },
