@@ -1,7 +1,6 @@
 import { filter, map, values } from "lodash";
 import fs from "fs/promises";
-
-export type GVK = { group: string; version: string; kind: string };
+import { GVK } from "specification";
 
 async function fetchVersionDefinitions(version: string): Promise<{
     definitions: Record<string, any>;

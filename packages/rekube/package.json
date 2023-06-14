@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "bin": "bin.cjs",
   "main": "index.tsx",
+  "files": [
+    "bin.cjs",
+    "index.tsx"
+  ],
   "dependencies": {
+    "commander": "^10.0.1",
     "esbuild-register": "^3.4.2",
     "js-yaml": "^4.1.0",
     "lodash-es": "^4.17.21",

@@ -4,6 +4,7 @@ import * as fs from "fs/promises";
 import { format } from "prettier";
 import * as process from "process";
 import { fetchDefinitions } from "fetchDefinitions";
+import { makeSpecification } from "specification";
 
 const dir = process.argv[2] || "../packages/base";
 
@@ -14,7 +15,10 @@ if (!dir) {
 (async () => {
     const { definitions, kinds } = await fetchDefinitions();
 
-    const files = codegen(definitions, kinds);
+    const specifications = makeSpecification(definitions, kinds);
+
+    // build base components library
+    const files = codegen(specifications);
 
     await fs.mkdir(dir, { recursive: true });
     for (const item of await fs.readdir(dir, { withFileTypes: true })) {
