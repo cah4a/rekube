@@ -1,10 +1,10 @@
 {
   "name": "@rekube/base",
   "bin": "bin.cjs",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
-  "dependencies": {
-    "rekube": "workspace:"
+  "peerDependencies": {
+    "rekube": "workspace:^0.1.1"
   },
   "devDependencies": {
     "typescript": "^5.1.3"
