@@ -1,11 +1,10 @@
 {
   "name": "rekube-example",
-  "version": "1.0.0",
-  "description": "",
+  "private": true,
   "main": "index.js",
   "keywords": [],
-  "author": "Sancha <cah4o3@gmail.com>",
-  "license": "ISC",
+  "author": "Sancha Kozlov <cah4o3@gmail.com>",
+  "license": "Apache-2.0",
   "dependencies": {
     "@rekube/base": "workspace:",
     "esbuild-register": "^3.4.2",

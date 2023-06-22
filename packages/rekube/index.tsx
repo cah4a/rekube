@@ -86,7 +86,11 @@ export function useResource() {
  * @param key
  * @param flags
  */
-export function useKubeProps(props: Record<string, any>, { key, flags, defaultFlag }: { key?: string, flags?: string[], defaultFlag?: string }) {
+export function useKubeProps(props: Record<string, any>, { key, flags, defaultFlag }: {
+    key?: string,
+    flags?: string[],
+    defaultFlag?: string
+}) {
     const metadata = Object.assign(
         {},
         Object.fromEntries(
@@ -119,8 +123,8 @@ export function useKubeProps(props: Record<string, any>, { key, flags, defaultFl
 
     return {
         childProps,
-        flag,
-    }
+        flag
+    };
 }
 
 export function Resource({
@@ -167,7 +171,7 @@ export function Item({
     }
 
     const { path, isItem } = contexts.find(
-        ctx => ctx.id === parentId && ctx.flag === flag,
+        ctx => ctx.id === parentId && ctx.flag === flag
     ) || {};
 
     if (!path) {

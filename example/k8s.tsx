@@ -2,9 +2,6 @@ import { Deployment } from "@rekube/base/apps/v1";
 import {
     Container,
     ContainerPort,
-    EnvFromSource,
-    EnvVar,
-    EnvVarSource,
     PodTemplateSpec,
     Service,
     ServicePort
@@ -21,22 +18,14 @@ export default function App() {
                 selector={{ matchLabels: labels }}
             >
                 <PodTemplateSpec meta:labels={labels}>
-                    <Container name="nginx">
-                        <ContainerPort containerPort={3000} />
-
-                        <EnvFromSource configMapRef={{ name: "mycfg" }}/>
-                    </Container>
-
-                    <Container init name="alpine">
-                        <EnvVar name="SOME_VALUE">
-                            <EnvVarSource configMapKeyRef={{ name: "mycfg", key: "some_key" }} />
-                        </EnvVar>
+                    <Container name="nginx" image="nginx:1.14.2">
+                        <ContainerPort containerPort={80} />
                     </Container>
                 </PodTemplateSpec>
             </Deployment>
 
-            <Service meta:name="My service" selector={{ labels }}>
-                <ServicePort port={4000} targetPort={3000} protocol="TCP" />
+            <Service meta:name="nginx-svc" selector={{ labels }}>
+                <ServicePort port={80} targetPort={80} protocol="TCP" />
             </Service>
         </>
     );

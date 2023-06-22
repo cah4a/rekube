@@ -75,7 +75,7 @@ importers:
   packages/base:
     dependencies:
       rekube:
-        specifier: 'workspace:'
+        specifier: workspace:^0.1.3
         version: link:../rekube
     devDependencies:
       typescript:

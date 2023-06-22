@@ -45,16 +45,7 @@ As option, install one of the following package managers:
 
    ```tsx
    import { Deployment } from "@rekube/base/apps/v1";
-   import {
-       Container,
-       ContainerPort,
-       EnvFromSource,
-       EnvVar,
-       EnvVarSource,
-       PodTemplateSpec,
-       Service,
-       ServicePort
-   } from "@rekube/base/core/v1";
+   import { Container, ContainerPort, PodTemplateSpec, Service, ServicePort } from "@rekube/base/core/v1";
    
    export default function App() {
        const labels = { app: "nginx" };
@@ -67,18 +58,14 @@ As option, install one of the following package managers:
                    selector={{ matchLabels: labels }}
                >
                    <PodTemplateSpec meta:labels={labels}>
-                       <Container name="nginx">
-                           <ContainerPort containerPort={3000} />
-   
-                           <EnvFromSource configMapRef={{ name: "mycfg" }} />
+                       <Container name="nginx" image="nginx:1.14.2">
+                           <ContainerPort containerPort={80} />
                        </Container>
-   
-                       <Container init name="alpine"/>
                    </PodTemplateSpec>
                </Deployment>
    
-               <Service meta:name="my_service" selector={{ labels }}>
-                   <ServicePort port={4000} targetPort={3000} protocol="TCP" />
+               <Service meta:name="nginx-svc" selector={{ labels }}>
+                   <ServicePort port={80} targetPort={80} protocol="TCP" />
                </Service>
            </>
        );
