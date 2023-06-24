@@ -9,7 +9,6 @@
     "kubernetes"
   ],
   "repository": "https://github.com/cah4a/rekube",
-  "bin": "bin.cjs",
   "type": "module",
   "peerDependencies": {
     "rekube": "workspace:^0.1.3"
