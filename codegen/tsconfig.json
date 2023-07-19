@@ -29,6 +29,5 @@
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
         "types": ["react", "node"]
-    },
-    "exclude": ["example", "packages"]
+    }
 }

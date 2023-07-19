@@ -15,12 +15,8 @@ import {
 } from "lodash";
 import { RenderableProp, renderComponent, renderInterface } from "renderers";
 import { FilesSink } from "filesSink";
-import {
-    ContextRelations,
-    OBJECT_META_ID,
-    Spec,
-    SpecProp,
-} from "specification";
+import { ContextRelations, OBJECT_META_ID } from "specification";
+import { Spec, SpecProp } from "types";
 
 function* findInterfaces(
     specs: Map<string, Spec>,

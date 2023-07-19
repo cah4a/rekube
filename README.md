@@ -13,7 +13,7 @@ JSX instead of clumsy YAML, declarative and type-safe configurations.
 
 ## Before you start
 
-Install [node](https://nodejs.org/en/download) if you don't have them already.
+Install [node](https://nodejs.org/en/download) if you don't have it already.
 
 As option, install one of the following package managers:
 - [yarn](https://yarnpkg.com/getting-started/install)

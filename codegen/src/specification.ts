@@ -13,36 +13,7 @@ import {
     orderBy,
     remove,
 } from "lodash";
-
-export type GVK = { group: string; version: string; kind: string };
-
-export type SpecProp = {
-    name: string;
-    type: { name: string; module?: string } | { id: string };
-    isRequired: boolean;
-    isArray: boolean;
-    description;
-};
-
-export type Spec = {
-    id: string;
-    hasMeta: boolean;
-    hasKind: boolean;
-    name: string;
-    module: string;
-    description: string;
-    properties: SpecProp[];
-    gvk?: GVK;
-    specKey?: string;
-};
-
-export type ContextRelation = {
-    id: string;
-    parentId: string;
-    path: string;
-    isArray: boolean;
-    alias?: { name: string; default?: boolean };
-};
+import { ContextRelation, GVK, Spec, SpecProp } from "types";
 
 export const OBJECT_META_ID = "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta";
 
@@ -381,8 +352,8 @@ export function makeSpecification(
 }
 
 export class ContextRelations {
-    private byIdMap = new Map<string, ContextRelation[]>();
-    private byParentIdMap = new Map<string, ContextRelation[]>();
+    byIdMap = new Map<string, ContextRelation[]>();
+    byParentIdMap = new Map<string, ContextRelation[]>();
 
     byId(id: string) {
         return this.byIdMap.get(id) || [];
@@ -402,6 +373,10 @@ export class ContextRelations {
             this.byParentIdMap.set(relation.parentId, []);
         }
         this.byParentIdMap.get(relation.parentId).push(relation);
+    }
+
+    values() {
+        return Array.from(this.byIdMap.values()).flat();
     }
 }
 
