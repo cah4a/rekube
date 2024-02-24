@@ -2014,7 +2014,7 @@ export const relations = new Map<string, ContextRelation[]>([
         parentId: "io.k8s.api.core.v1.PodAffinityTerm",
         path: "labelSelector",
         isArray: false,
-        alias: { name: "labelSelector", default: false },
+        alias: { name: "labelSelector", default: true },
       },
       {
         id: "io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector",

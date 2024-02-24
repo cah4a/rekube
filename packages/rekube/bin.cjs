@@ -6,7 +6,7 @@ program
     .name("rekube")
     .description("CLI to generate Kubernetes YAML files from React components")
     .version(version)
-    .argument("[filename.tsx]", "file to be converted to ", "k8s.tsx")
+    .argument("[k8s.tsx]", "file to be converted to", "k8s.tsx")
     .action((path) => {
         require("esbuild-register/dist/node.js").register({
             target: `node${process.version.slice(1)}`,
@@ -25,14 +25,16 @@ program
         ).then(console.log, e => console.error(e));
     });
 
-// program
-//     .command("generate")
-//     .description("Generates component from the yaml file")
-//     .alias("g")
-//     .argument("<from-file>", "file to be converted to rekube component")
-//     .action((str, options) => {
-//         console.log("generate", str, options);
-//     });
+program
+    .command("convert")
+    .description("Generates component from the yaml file")
+    .alias("c")
+    .argument("<k8s.yaml>", "file to be converted to rekube component")
+    .action(async (fileName) => {
+        const {convert} = await import("@rekube/converter");
+        const fs = require("fs");
+        console.log(convert(fs.readFileSync(fileName, "utf-8")));
+    });
 
 
 program.parse();

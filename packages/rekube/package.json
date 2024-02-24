@@ -1,10 +1,11 @@
 {
   "name": "rekube",
-  "version": "0.1.3",
-  "description": "React renderer for Kubernetes configurations",
+  "version": "0.1.4",
+  "description": "Renderer for Rekube kubernetes configurations",
   "author": "Sancha Kozlov <cah4o3@gmail.com>",
   "license": "Apache-2.0",
   "keywords": [
+    "rekube",
     "react",
     "react-renderer",
     "kubernetes",
@@ -12,6 +13,7 @@
   ],
   "repository": "https://github.com/cah4a/rekube",
   "bin": "bin.cjs",
+  "type": "module",
   "main": "index.tsx",
   "files": [
     "bin.cjs",
@@ -23,16 +25,19 @@
     "esbuild-register": "^3.4.2",
     "js-yaml": "^4.1.0",
     "lodash-es": "^4.17.21",
-    "react-nil": "^1.2.0"
+    "react-nil": "^1.2.0",
+    "@rekube/converter": "workspace:^0.1.4"
   },
   "peerDependencies": {
     "react": "^18.2.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.5",
+    "@types/lodash-es": "^4.17.11",
     "@types/node": "^20.2.3",
     "@types/react": "^18.2.6",
-    "typescript": "^5.1.3",
+    "typescript": "^5.2.2",
+    "vite-tsconfig-paths": "^4.2.0",
     "vitest": "^0.31.1"
   }
 }

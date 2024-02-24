@@ -206,6 +206,7 @@ function* findContextComponents(
                 isArray: prop.isArray,
             };
         } else if (spec.properties.length === 1) {
+            // usually it's a `spec` key
             yield* findContextComponents(
                 spec.properties,
                 specs,
@@ -226,7 +227,7 @@ function createContextRelations(specs: Map<string, Spec>) {
                 )
             )
         ) {
-            // skip list specs
+            // skip list specs, maybe we'll need them later
             continue;
         }
 
@@ -289,32 +290,36 @@ function createContextRelations(specs: Map<string, Spec>) {
                     camelCase(depluralize(name))
                 );
 
-                const firstDefault = names.every(
+                // Case when we have Container and initContainer, so we want only that prefix as flag
+                const prefix = names.every(
                     (name) =>
                         name.toLowerCase().endsWith(names[0].toLowerCase()) ||
                         name.toLowerCase().startsWith(names[0].toLowerCase())
-                );
-
-                let index = 0;
+                ) ? names[0] : undefined;
 
                 for (const mount of mounts) {
+                    let name = names.shift();
+
+                    if (prefix && name !== prefix) {
+                        name = removePrefixPostfix(name, prefix);
+                    }
+
+                    // LabelSelector could be mounted as /labelSelector/objectSelector/podSelector/namespaceSelector
+                    // We want to be labelSelector by default
+                    const isSameName = ctxId.toLowerCase().endsWith(`.${name.toLowerCase()}`)
+
                     relations.add({
                         id: ctxId,
                         parentId: id,
                         path: mount.path,
                         isArray: mount.isArray,
                         alias: {
-                            name:
-                                index > 0 && firstDefault
-                                    ? removePrefixPostfix(
-                                          names[index],
-                                          names[0]
-                                      )
-                                    : names[index],
-                            default: firstDefault && index === 0,
+                            name,
+                            default: prefix
+                                ? name == prefix
+                                : isSameName,
                         },
                     });
-                    index += 1;
                 }
             }
         }

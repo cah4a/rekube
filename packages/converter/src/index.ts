@@ -3,7 +3,15 @@ import { specs } from "specification/specs";
 import { get, keyBy, filter, unset, isEmpty, isObject, camelCase, upperFirst, map } from "lodash";
 import { loadAll } from "js-yaml";
 import { Spec } from "specification/types.js";
-import { format } from "prettier";
+import prettier from "prettier/standalone";
+import babel from 'prettier/parser-babel';
+
+function format(code: string) {
+    return prettier.format(code, {
+        parser: "babel",
+        plugins: [babel]
+    });
+}
 
 const byGvk = keyBy(
     filter(Array.from(specs.values()), "gvk"),
@@ -80,7 +88,7 @@ function renderKindTag(input: { kind: string, apiVersion: string }) {
 }
 
 
-function renderTag(spec: Spec, props: Record<string, any>) {
+function renderTag(spec: Spec, props: Record<string, any>, flag?: string) {
     const children: string[] = [];
     const imports: Record<string, string> = {};
 
@@ -93,7 +101,11 @@ function renderTag(spec: Spec, props: Record<string, any>) {
             const items = Array.isArray(value) ? value : [value];
 
             for (const item of items) {
-                const child = renderTag(specs.get(relation.id), item);
+                const child = renderTag(
+                    specs.get(relation.id),
+                    item,
+                    relation.alias && !relation.alias?.default ? relation.alias.name : undefined,
+                );
 
                 Object.assign(imports, child.imports);
                 children.push(child.jsx);
@@ -106,13 +118,13 @@ function renderTag(spec: Spec, props: Record<string, any>) {
     if (children.length === 0) {
         return {
             imports,
-            jsx: `<${spec.name} ${renderProps(props, spec.hasMeta, spec.specKey)}/>`
+            jsx: `<${spec.name} ${flag || ""} ${renderProps(props, spec.hasMeta, spec.specKey)}/>`
         };
     }
 
     return {
         imports,
-        jsx: `<${spec.name} ${renderProps(props, spec.hasMeta, spec.specKey)}>${children.join("\n")}</${spec.name}>`
+        jsx: `<${spec.name} ${flag || ""} ${renderProps(props, spec.hasMeta, spec.specKey)}>${children.join("\n")}</${spec.name}>`
     };
 }
 

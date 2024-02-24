@@ -65,16 +65,23 @@ function* findComponents(
     }
 
     for (const id of creep) {
+        const parents = relations.byId(id);
+        const contexts = parents.map((relation) => ({
+            id: relation.parentId,
+            path: relation.path,
+            isItem: relation.isArray,
+            flag: relation.alias?.name,
+        }));
+
         if (kinds.has(id)) {
             yield {
                 id,
                 spec: specs.get(id),
-                contexts: [],
+                contexts,
             };
             continue;
         }
 
-        const parents = relations.byId(id);
         const aliases = uniqWith(map(parents, "alias"), isEqual);
         const byParents = keyBy(parents, "parentId");
         const parentSubcomponent =
@@ -90,12 +97,7 @@ function* findComponents(
                 : undefined,
             flags: map(aliases, "name"),
             defaultFlag: find(aliases, "default")?.name,
-            contexts: parents.map((relation) => ({
-                id: relation.parentId,
-                path: relation.path,
-                isItem: relation.isArray,
-                flag: relation.alias?.name,
-            })),
+            contexts,
         };
     }
 }

@@ -32,13 +32,13 @@ As option, install one of the following package managers:
 2. Add Rekube base components package to the project:
    
    ```bash
-   npm install rekube @rekube/base
+   npm install -D rekube @rekube/base
    ```
    
    or
    ```bash
-   pnpm install rekube @rekube/base
-   yarn add rekube @rekube/base
+   pnpm install -D rekube @rekube/base
+   yarn add -D rekube @rekube/base
    ```
 
 3. Create a file `k8s.tsx` with the following content:
@@ -91,3 +91,16 @@ As option, install one of the following package managers:
 Rekube utilizes the npm ecosystem.  
 You can publish your Rekube components just like [any other npm package](https://docs.npmjs.com/creating-and-publishing-scoped-public-packages).  
 Moreover, Rebuke includes a built-in transpiler that enables you to directly publish `tsx/jsx` files.
+
+## Generating Rekube Components out of yaml file
+
+Rekube includes a built-in transpiler that enables you to directly convert `yaml` files to `tsx` files.
+
+```bash
+npx rekube convert ./path/to/your/file.yaml
+```
+
+## Contributing
+
+Any contribution is welcome. Either it's a bug report, a feature request, or a pull request.
+Reach me out if you have any questions or need help with anything.

@@ -189,6 +189,7 @@ export const DeploymentRollback = (props: {
  * The StatefulSet guarantees that a given network identity will always map to the same storage identity.
  *
  * Child components:
+ * - spec.volumeClaimTemplates: {@link PersistentVolumeClaim}
  * - spec.selector: {@link LabelSelector} (single element)
  * - spec.template: {@link PodTemplateSpec} (single element)
  * - spec.updateStrategy: {@link StatefulSetUpdateStrategy} (single element) */

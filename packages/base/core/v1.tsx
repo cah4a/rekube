@@ -3645,6 +3645,38 @@ export const PersistentVolumeClaim = ({
       id="io.k8s.api.core.v1.PersistentVolumeClaim"
       kind="PersistentVolumeClaim"
       apiVersion="v1"
+      contexts={[
+        {
+          id: "io.k8s.api.apps.v1.StatefulSet",
+          path: "spec.volumeClaimTemplates",
+          isItem: true,
+        },
+        {
+          id: "io.k8s.api.apps.v1.StatefulSetSpec",
+          path: "volumeClaimTemplates",
+          isItem: true,
+        },
+        {
+          id: "io.k8s.api.apps.v1beta1.StatefulSet",
+          path: "spec.volumeClaimTemplates",
+          isItem: true,
+        },
+        {
+          id: "io.k8s.api.apps.v1beta1.StatefulSetSpec",
+          path: "volumeClaimTemplates",
+          isItem: true,
+        },
+        {
+          id: "io.k8s.api.apps.v1beta2.StatefulSet",
+          path: "spec.volumeClaimTemplates",
+          isItem: true,
+        },
+        {
+          id: "io.k8s.api.apps.v1beta2.StatefulSetSpec",
+          path: "volumeClaimTemplates",
+          isItem: true,
+        },
+      ]}
       props={childProps}
     >
       {children}
@@ -5544,7 +5576,7 @@ export const Container = ({
    */
   workingDir?: string;
   children?: React.ReactNode;
-} & { init?: boolean }) => {
+} & ({ container?: boolean } | { init?: boolean })) => {
   const { childProps, flag } = useKubeProps(props, {
     flags: ["container", "init"],
     defaultFlag: "container",
@@ -8477,7 +8509,7 @@ export const EndpointAddress = (
      * Reference to object providing the endpoint.
      */
     targetRef?: IObjectReference;
-  } & { notReady?: boolean }
+  } & ({ address?: boolean } | { notReady?: boolean })
 ) => {
   const { childProps, flag } = useKubeProps(props, {
     flags: ["address", "notReady"],

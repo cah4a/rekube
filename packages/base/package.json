@@ -1,6 +1,6 @@
 {
   "name": "@rekube/base",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Basic building blocks for Rekube kubernetes configurations",
   "author": "Sancha Kozlov <cah4o3@gmail.com>",
   "license": "Apache-2.0",

@@ -460,6 +460,7 @@ spec:
               <VolumeMount name=\\"dshm\\" mountPath=\\"/dev/shm\\" />
               <VolumeMount name=\\"data\\" mountPath=\\"/bitnami/postgresql\\" />
               <Probe
+                livenessProbe
                 failureThreshold={6}
                 initialDelaySeconds={30}
                 periodSeconds={10}
@@ -474,6 +475,7 @@ spec:
                 }}
               />
               <Probe
+                readinessProbe
                 failureThreshold={6}
                 initialDelaySeconds={5}
                 periodSeconds={10}

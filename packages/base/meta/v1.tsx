@@ -138,6 +138,7 @@ export const LabelSelector = ({
       "labelSelector",
       "podSelector",
     ],
+    defaultFlag: "labelSelector",
   });
   return (
     <Item

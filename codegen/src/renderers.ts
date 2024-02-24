@@ -131,7 +131,7 @@ export function renderComponent({
 
     const flagType = flags?.length
         ? `( ${flags
-              .filter((flag) => flag !== defaultFlag)
+              .filter((flag) => !!flag)
               .map((flag) =>
                   flag
                       ? `{ ${flag}${flagIsOptional ? "?" : ""}: boolean }`
