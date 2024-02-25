@@ -7,7 +7,6 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@rekube/base": "workspace:",
-    "@rekube/components": "workspace:",
     "esbuild-register": "^3.4.2",
     "rekube": "workspace:"
   }
