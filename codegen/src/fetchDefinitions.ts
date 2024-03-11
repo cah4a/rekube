@@ -1,5 +1,5 @@
 import { filter, map, values } from "lodash";
-import fs from "fs/promises";
+import * as fs from "fs/promises";
 import { GVK } from "types";
 
 async function fetchVersionDefinitions(version: string): Promise<{

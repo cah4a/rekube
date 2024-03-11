@@ -22,7 +22,7 @@ program
             file.default instanceof Function
                 ? React.createElement(file.default)
                 : file.default
-        ).then(console.log, e => console.error(e));
+        ).then(console.log, (e) => console.error(e));
     });
 
 program
@@ -31,10 +31,9 @@ program
     .alias("c")
     .argument("<k8s.yaml>", "file to be converted to rekube component")
     .action(async (fileName) => {
-        const {convert} = await import("@rekube/converter");
+        const { convert } = await import("@rekube/converter");
         const fs = require("fs");
         console.log(convert(fs.readFileSync(fileName, "utf-8")));
     });
-
 
 program.parse();

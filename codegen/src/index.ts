@@ -1,7 +1,7 @@
-import { codegen } from "codegen";
 import { resolve, dirname } from "path";
 import * as fs from "fs/promises";
 import { format } from "prettier";
+import { codegen } from "codegen";
 import { fetchDefinitions } from "fetchDefinitions";
 import { makeSpecification } from "specification";
 

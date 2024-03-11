@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { describe, test, expect } from "vitest";
-import { renderYaml, useAssert, useLateState } from "./index.js";
+import { describe, test, expect, vi } from "vitest";
+import { renderYaml, useAssert, useLateState } from ".";
+import { Warp } from "./src/warp";
 
 describe("rekube", () => {
     test("renders yaml", async () => {
         const rds = await renderYaml(
-            <resource-definition
+            <resource
                 apiVersion="apps/v1"
                 kind="Deployment"
                 metadata={{ name: "nginx", labels: { app: "nginx" } }}
@@ -21,7 +22,7 @@ describe("rekube", () => {
                         <item path="ports" value={{ containerPort: 80 }} />
                     </item>
                 </prop>
-            </resource-definition>
+            </resource>
         );
 
         expect(rds).toMatchInlineSnapshot(`
@@ -54,21 +55,19 @@ describe("rekube", () => {
             return <></>;
         };
 
-        await expect(
-            () => renderYaml(
-                <resource-definition
+        await expect(() =>
+            renderYaml(
+                <resource
                     apiVersion="apps/v1"
                     kind="Deployment"
                     metadata={{ name: "nginx", labels: { app: "nginx" } }}
                 >
                     <Value />
-                </resource-definition>
+                </resource>
             )
         ).rejects.toMatchObject({
             message: expect.any(String),
-            asserts: [
-                expect.any(Error)
-            ]
+            asserts: [expect.any(Error)],
         });
     });
 
@@ -93,13 +92,13 @@ describe("rekube", () => {
 
         expect(
             await renderYaml(
-                <resource-definition
+                <resource
                     apiVersion="apps/v1"
                     kind="Deployment"
                     metadata={{ name: "nginx", labels: { app: "nginx" } }}
                 >
                     <Value />
-                </resource-definition>
+                </resource>
             )
         ).toMatchInlineSnapshot(`
           "apiVersion: apps/v1
@@ -118,21 +117,19 @@ describe("rekube", () => {
             return <prop path="test.something" value={state} />;
         };
 
-        await expect(
-            () => renderYaml(
-                <resource-definition
+        await expect(() =>
+            renderYaml(
+                <resource
                     apiVersion="apps/v1"
                     kind="Deployment"
                     metadata={{ name: "nginx", labels: { app: "nginx" } }}
                 >
                     <Value />
-                </resource-definition>
+                </resource>
             )
         ).rejects.toMatchObject({
             message: expect.any(String),
-            asserts: [
-                expect.any(Error)
-            ]
+            asserts: [expect.any(Error)],
         });
     });
 
@@ -149,13 +146,13 @@ describe("rekube", () => {
 
         expect(
             await renderYaml(
-                <resource-definition
+                <resource
                     apiVersion="apps/v1"
                     kind="Deployment"
                     metadata={{ name: "nginx", labels: { app: "nginx" } }}
                 >
                     <Value />
-                </resource-definition>
+                </resource>
             )
         ).toMatchInlineSnapshot(`
           "apiVersion: apps/v1
@@ -167,6 +164,103 @@ describe("rekube", () => {
           test:
             something:
               name: hello
+          "
+        `);
+    });
+
+    test("warp resource", async () => {
+        const transformer = vi.fn((resource) => ({
+            ...resource,
+            redacted: true,
+        }));
+
+        const rds = await renderYaml(
+            <Warp transformer={transformer}>
+                <resource
+                    apiVersion="apps/v1"
+                    kind="Deployment"
+                    metadata={{ name: "nginx", labels: { app: "nginx" } }}
+                >
+                    <prop path="spec.matchLabels.app" value="nginx" />
+                </resource>
+            </Warp>
+        );
+
+        expect(transformer.mock.calls[0]).toMatchObject([
+            {
+                apiVersion: "apps/v1",
+                kind: "Deployment",
+                metadata: {
+                    labels: {
+                        app: "nginx",
+                    },
+                    name: "nginx",
+                },
+                spec: {
+                    matchLabels: {
+                        app: "nginx",
+                    },
+                },
+            },
+        ]);
+
+        expect(rds).toMatchInlineSnapshot(`
+          "apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: nginx
+            labels:
+              app: nginx
+          spec:
+            matchLabels:
+              app: nginx
+          redacted: true
+          "
+        `);
+    });
+
+    test("warp prop", async () => {
+        const transformer = vi.fn((resource) => ({
+            ...resource,
+            redacted: true,
+        }));
+
+        const rds = await renderYaml(
+            <resource
+                apiVersion="apps/v1"
+                kind="Deployment"
+                metadata={{ name: "nginx", labels: { app: "nginx" } }}
+            >
+                <prop path="spec">
+                    <prop path="template.metadata.labels.app" value="nginx" />
+                    <Warp transformer={transformer}>
+                        <prop path="matchLabels.app" value="nginx" />
+                    </Warp>
+                </prop>
+            </resource>
+        );
+
+        expect(transformer.mock.calls[0][0]).toMatchObject({
+            matchLabels: {
+                app: "nginx",
+            },
+        });
+
+        expect(rds).toMatchInlineSnapshot(`
+          "apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: nginx
+            labels:
+              app: nginx
+          spec:
+            template:
+              metadata:
+                labels:
+                  app: nginx
+            matchLabels:
+              app: nginx
+            redacted: true
           "
         `);
     });

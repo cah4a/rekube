@@ -1,36 +1,29 @@
 {
-  "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "lib": [
-      "es2020"
-    ],
-    "isolatedModules": true,
-    "moduleResolution": "node16",
-    "moduleDetection": "force",
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": false,
-    "esModuleInterop": true,
-    "jsx": "react",
-    "declaration": true,
-    "stripInternal": true,
-    "strict": false,
-    "noImplicitOverride": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noEmitOnError": true,
-    "noEmit": true,
-    "useDefineForClassFields": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "types": [
-      "react",
-      "node"
-    ]
-  },
-  "exclude": [
-    "vitest.config.ts"
-  ]
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "lib": ["es2020"],
+        "isolatedModules": true,
+        "moduleResolution": "node",
+        "moduleDetection": "force",
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": false,
+        "esModuleInterop": true,
+        "jsx": "react",
+        "declaration": true,
+        "stripInternal": true,
+        "strict": false,
+        "noImplicitOverride": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "noEmitOnError": true,
+        "noEmit": true,
+        "useDefineForClassFields": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "types": ["react", "node"]
+    },
+    "exclude": ["vitest.config.ts"]
 }
